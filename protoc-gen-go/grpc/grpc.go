@@ -170,12 +170,13 @@ func (g *grpc) generateService(file *generator.FileDescriptor, service *pb.Servi
 	// Client structure.
 	g.P("type ", unexport(servName), "Client struct {")
 	g.P("cc *", grpcPkg, ".ClientConn")
+	g.P("opts []", grpcPkg, ".CallOption")
 	g.P("}")
 	g.P()
 
 	// NewClient factory.
-	g.P("func New", servName, "Client (cc *", grpcPkg, ".ClientConn) ", servName, "Client {")
-	g.P("return &", unexport(servName), "Client{cc}")
+	g.P("func New", servName, "Client (cc *", grpcPkg, ".ClientConn, opts ...", grpcPkg, ".CallOption) ", servName, "Client {")
+	g.P("return &", unexport(servName), "Client{cc: cc, opts: opts}")
 	g.P("}")
 	g.P()
 
@@ -286,6 +287,7 @@ func (g *grpc) generateClientMethod(servName, fullServName, serviceDescVar strin
 	g.P("func (c *", unexport(servName), "Client) ", g.generateClientSignature(servName, method), "{")
 	if !method.GetServerStreaming() && !method.GetClientStreaming() {
 		g.P("out := new(", outType, ")")
+		g.P("opts = append(opts, c.opts...)")
 		// TODO: Pass descExpr to Invoke.
 		g.P("err := ", grpcPkg, `.Invoke(ctx, "`, sname, `", in, out, c.cc, opts...)`)
 		g.P("if err != nil { return nil, err }")
